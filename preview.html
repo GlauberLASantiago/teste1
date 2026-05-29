@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Metrônomo</title>
+
+<style>
+  :root {
+    --bg: #F7F5E6;
+    --card: #F2D499;
+    --text: #8E6B4D;
+    --accent: #C45E4D;
+    --accent2: #5B8E7D;
+  }
+
+  * {
+    box-sizing: border-box;
+    font-family: system-ui, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+  }
+
+  .app {
+    width: min(420px, 92vw);
+    background: var(--card);
+    padding: 2rem;
+    border-radius: 24px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(142, 107, 77, 0.25);
+  }
+
+  h1 {
+    margin-top: 0;
+  }
+
+  .bpm {
+    font-size: 4rem;
+    font-weight: 800;
+    margin: 1rem 0 0.2rem;
+  }
+
+  .label {
+    opacity: 0.75;
+    margin-bottom: 1.5rem;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+
+  button {
+    flex: 1;
+    border: 0;
+    border-radius: 14px;
+    padding: 0.9rem 1rem;
+    font-size: 1rem;
+    background: var(--accent);
+    color: #F7F5E6;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: var(--accent2);
+  }
+
+  .pulse {
+    width: 90px;
+    height: 90px;
+    margin: 1.5rem auto;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.45;
+    transform: scale(1);
+    transition: transform 0.08s, opacity 0.08s;
+  }
+
+  .pulse.active {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+</style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>Metrônomo</h1>
+
+    <div class="bpm" id="bpmValue">120</div>
+    <div class="label">BPM</div>
+
+    <input id="bpmSlider" type="range" min="40" max="220" value="120" />
+
+    <div class="pulse" id="pulse"></div>
+
+    <div class="controls">
+      <button id="minus">−</button>
+      <button id="play">Iniciar</button>
+      <button id="plus">+</button>
+    </div>
+  </div>
+
+<script>
+  const bpmValue = document.getElementById("bpmValue");
+  const bpmSlider = document.getElementById("bpmSlider");
+  const playBtn = document.getElementById("play");
+  const minusBtn = document.getElementById("minus");
+  const plusBtn = document.getElementById("plus");
+  const pulse = document.getElementById("pulse");
+
+  let bpm = 120;
+  let playing = false;
+  let intervalId = null;
+  let audioCtx = null;
+
+  function setBpm(value) {
+    bpm = Math.max(40, Math.min(220, value));
+    bpmValue.textContent = bpm;
+    bpmSlider.value = bpm;
+
+    if (playing) {
+      stop();
+      start();
+    }
+  }
+
+  function clickSound() {
+    if (!audioCtx) {
+      audioCtx = new AudioContext();
+    }
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.frequency.value = 1000;
+    gain.gain.value = 0.25;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.04);
+  }
+
+  function tick() {
+    clickSound();
+
+    pulse.classList.add("active");
+    setTimeout(() => {
+      pulse.classList.remove("active");
+    }, 90);
+  }
+
+  function start() {
+    playing = true;
+    playBtn.textContent = "Parar";
+    tick();
+    intervalId = setInterval(tick, 60000 / bpm);
+  }
+
+  function stop() {
+    playing = false;
+    playBtn.textContent = "Iniciar";
+    clearInterval(intervalId);
+  }
+
+  playBtn.addEventListener("click", () => {
+    playing ? stop() : start();
+  });
+
+  bpmSlider.addEventListener("input", e => {
+    setBpm(Number(e.target.value));
+  });
+
+  minusBtn.addEventListener("click", () => {
+    setBpm(bpm - 1);
+  });
+
+  plusBtn.addEventListener("click", () => {
+    setBpm(bpm + 1);
+  });
+</script>
+</body>
+</html>
